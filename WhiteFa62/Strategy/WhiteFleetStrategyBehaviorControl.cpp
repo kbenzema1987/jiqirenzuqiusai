@@ -827,9 +827,9 @@ bool WhiteFleetStrategyBehaviorControl::applyBackfieldOutlet(SkillRequest& reque
     if(!WhiteFleetFleetProgressPolicy::frontSupply({ball.x(),ball.y()},{target.x(),target.y()},
        theFieldDimensions.xPosOpponentGoalLine,theFieldDimensions.yPosLeftTouchline))return false;
     const float risk=thePassEvaluation.getRating(ball,target,false);
-    if(!std::isfinite(risk)||risk<.7f)return false;
+    if(!std::isfinite(risk)||risk<.8f)return false;                 // 改：.7f -> .8f
     const auto evaluation=thePassTargetEvaluation.getBestPassData(ball,target,peer.number);
-    if(!evaluation.isValid||!evaluation.isAngleFree||!std::isfinite(evaluation.passRating)||evaluation.passRating<.7f||
+    if(!evaluation.isValid||!evaluation.isAngleFree||!std::isfinite(evaluation.passRating)||evaluation.passRating<.8f|| // 改：.7f -> .8f
        !evaluation.bestShiftedTargetOnField.allFinite()||(evaluation.bestShiftedTargetOnField-target).norm()>300.f)return false;
     const float length=(target-ball).norm();
     const float velocity=KickLengthConverter::requestedBallVelocity(KickInfo::rlKickStrong,length,theKickInfo,
@@ -1290,11 +1290,26 @@ bool WhiteFleetStrategyBehaviorControl::applyMatchRestart(SkillRequest& request,
      theFieldBall.positionRelative.norm()<2500.f&&self.isUpright)
   {
     const auto front=std::find_if(agents.begin(),agents.end(),[&](const Agent& a)
-      {return a.number==goalKickFrontForward&&a.number!=self.number&&a.isUpright&&TeamActivityPolicy::fresh(now,a.timestamp,1500);});
-    // The aimed pass can take long to align (one drill goal kick never struck in 22 s):
-    // after goalKickPassMs of fallback the keeper just kicks long towards the opponent half.
+    {
+      if(a.number!=goalKickFrontForward||a.number==self.number||!a.isUpright||
+         !TeamActivityPolicy::fresh(now,a.timestamp,1500))return false;
+      // 门球不传对方：该队友朝对方球门方向 800 mm 内若有对方，则不选它做接球人，改走长传向前。
+      const Vector2f oppGoal(theFieldDimensions.xPosOpponentGoalLine,0.f);
+      const Vector2f toGoal=(oppGoal-a.pose.translation);
+      if(toGoal.norm()<1.f)return false;
+      const Vector2f dir=toGoal.normalized();
+      for(const auto& o:theObstacleModel.obstacles)
+      {
+        if(!o.isOpponent()||!o.lastSeen||o.lastSeen>now||now-o.lastSeen>650||!o.center.allFinite())continue;
+        const Vector2f p=theRobotPose*o.center;
+        if(!p.allFinite())continue;
+        const Vector2f rel=p-a.pose.translation;
+        if(rel.dot(dir)>0.f&&rel.norm()<800.f)return false;
+      }
+      return true;
+    });
     const bool passing=front!=agents.end()&&now-cornerPlan.started<goalKickFallbackMs+goalKickPassMs;
-    request=passing?SkillRequest::Builder::passTo(goalKickFrontForward):SkillRequest::Builder::shoot(); // shoot = long forward kick; clear() may stand when its angle is not forward enough
+    request=passing?SkillRequest::Builder::passTo(goalKickFrontForward):SkillRequest::Builder::shoot();
     if(now-goalKickFallbackLog>=1000)
     {
       goalKickFallbackLog=now;
@@ -1328,16 +1343,14 @@ bool WhiteFleetStrategyBehaviorControl::applyMatchRestart(SkillRequest& request,
        std::abs(target.y())>=theFieldDimensions.yPosLeftTouchline-500.f)return false;
     safety=thePassEvaluation.getRating(ball,target,false);
     if(!std::isfinite(safety)){safety=-1.f;return false;}
-    if(safety<.7f){nativeStage=1;return false;}
+    if(safety<.8f){nativeStage=1;return false;}                     // 改：.7f -> .8f
     const auto native=thePassTargetEvaluation.getBestPassData(ball,target,number);
     nativeRating=native.passRating;
     nativeShift=(native.bestShiftedTargetOnField-target).norm();
     nativeStage=!native.isValid?2:!native.isAngleFree?3:
-      (!std::isfinite(native.passRating)||native.passRating<.7f)?4:
+      (!std::isfinite(native.passRating)||native.passRating<.8f)?4:  // 改：.7f -> .8f
       (!native.bestShiftedTargetOnField.allFinite()||nativeShift>300.f)?5:6;
-    // combinedRating includes future-goal xG, not just pass safety. Preserve
-    // the actual native safety probability instead of a scoring-benefit gate.
-    return native.isValid&&native.isAngleFree&&std::isfinite(native.passRating)&&native.passRating>=.7f&&
+    return native.isValid&&native.isAngleFree&&std::isfinite(native.passRating)&&native.passRating>=.8f&& // 改：.7f -> .8f
       native.bestShiftedTargetOnField.allFinite()&&(native.bestShiftedTargetOnField-target).norm()<=300.f;
   };
   const auto stamp=[&](int reason,bool preparingOnly)
@@ -1621,7 +1634,7 @@ bool WhiteFleetStrategyBehaviorControl::applyMatchRestart(SkillRequest& request,
           // proposal. It must pass the original .7/300mm gates again, not bypass
           // the old point's shift limit. No issued receiver/P may change.
           const auto adjusted=thePassTargetEvaluation.getBestPassData(ball,target,peer.number);
-          if(adjusted.isValid&&adjusted.isAngleFree&&std::isfinite(adjusted.passRating)&&adjusted.passRating>=.7f&&
+          if(adjusted.isValid&&adjusted.isAngleFree&&std::isfinite(adjusted.passRating)&&adjusted.passRating>=.8f&& // 改：.7f -> .8f
              adjusted.bestShiftedTargetOnField.allFinite()&&forwardOutlet({ball.x(),ball.y()},
                {adjusted.bestShiftedTargetOnField.x(),adjusted.bestShiftedTargetOnField.y()},
                theFieldDimensions.xPosOpponentGoalLine,theFieldDimensions.yPosLeftTouchline)&&
@@ -1900,7 +1913,4 @@ void WhiteFleetStrategyBehaviorControl::updateAgentByTeamMessage(Agent& agent, c
   agent.role = teamMessage.theStrategyStatus.role;
 }
 
-void WhiteFleetStrategyBehaviorControl::updateCurrentPosition(Agent& agent)
-{
-  agent.currentPosition = Teammate::getEstimatedPosition(agent.lastKnownPose, agent.lastKnownTarget, agent.lastKnownSpeed, theFrameInfo.getTimeSince(agent.lastKnownTimestamp));
-}
+void WhiteFleetStrategyBehaviorControl::updateCurrentPosition(Agent
