@@ -59,7 +59,8 @@ option((WhiteFleetSkillBehaviorControl) KickAtGoal,
       if(theKickAtGoalEvaluation.kickInfo.isValid && theIndirectKick.allowDirectKick)
       {
         GoToBallAndKick({.targetDirection = theKickAtGoalEvaluation.kickInfo.kickDirection,
-                         .kickType = theKickAtGoalEvaluation.kickInfo.kickType});
+                         .kickType = theKickAtGoalEvaluation.kickInfo.kickType,
+                         .length = 12000.f}); // 射门力量拉满：length 足够大，KickLengthConverter 夹到该 KickType 速度上限
       }
       else if(theGameState.isFreeKick() && theGameState.isForOwnTeam())
       {
@@ -86,7 +87,8 @@ option((WhiteFleetSkillBehaviorControl) KickAtGoal,
         kickType = theKickAtGoalEvaluation.kickInfo.kickType;
       }
       GoToBallAndKick({.targetDirection = kickAngleInField - theRobotPose.rotation,
-                       .kickType = kickType});
+                       .kickType = kickType,
+                       .length = 12000.f}); // 同上：射门力量拉满
     }
   }
 
