@@ -16,8 +16,8 @@
 #include "WhiteFleetK1V21MatchProfile.h"   // guardedPhysicalReceiver()
 #include "Settings.h"                      // Settings::lowestValidPlayerNumber 等
 
+// 平台检查：不再包含 <cstdlib>（系统头文件，禁止）
 #include <cstdio>
-#include <cstdlib>
 #include <cmath>
 #include <tuple>
 #include <limits>
@@ -284,9 +284,10 @@ option((WhiteFleetSkillBehaviorControl) PlayBall,
     }
     action
     {
+      // 平台检查：不再读取环境变量，最后一个参数传 nullptr（等价于“该环境变量未设置”）
       if(WhiteFleetAutonomousKickoff::enabled(WhiteFleetSimPhysical::physical(),
            WhiteFleetK1V21MatchProfile::guardedPhysicalReceiver(), WhiteFleetSimPhysical::simulated(),
-           Global::getSettings().teamNumber, std::getenv("MDFZ_AUTONOMOUS_KICKOFF_V4_ENABLE"))
+           Global::getSettings().teamNumber, nullptr)
          && theGameState.state == GameState::ownKickOff && theGameState.isForOwnTeam())
         DirectKickOff();
       // Class base: a plain football kick-off. The ball goes to the feet of the nearest field player of the own
