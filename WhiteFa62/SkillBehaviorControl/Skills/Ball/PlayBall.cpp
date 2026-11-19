@@ -174,8 +174,35 @@ option((WhiteFleetSkillBehaviorControl) PlayBall,
             PassToTeammate({.playerNumber = theSkillRequest.passTarget});
             break;
           case SkillRequest::dribble:
-            GoToBallAndDribble({.targetDirection = Angle::normalize(theSkillRequest.target.rotation - theRobotPose.rotation)});
+          {
+            Angle dribbleDirection = Angle::normalize(theSkillRequest.target.rotation - theRobotPose.rotation);
+            // 最小改动：正前方 ±50°、1.2 m 内有对手时，带球方向向对手反侧偏 35°，绕开而不是直冲。
+            // 仅用本文件已出现的 theObstacleModel / o.isOpponent() / o.center，不引入新名字。
+            const float ballDist = theFieldBall.positionRelative.norm();
+            float closestAhead = std::numeric_limits<float>::max();
+            Angle closestAngle = 0_deg;
+            for(const auto& o : theObstacleModel.obstacles)
+            {
+              if(!o.isOpponent() || !o.center.allFinite())
+                continue;
+              const Angle a = o.center.angle();
+              if(std::abs(a) > 50_deg)          // 只看正前方 ±50°
+                continue;
+              const float d = o.center.norm();
+              if(d < closestAhead)
+              {
+                closestAhead = d;
+                closestAngle = a;
+              }
+            }
+            if(closestAhead < 1200.f && closestAhead > ballDist)   // 对手在球前方 1.2 m 内
+            {
+              const Angle side = closestAngle >= 0_deg ? -35_deg : 35_deg;  // 往对手反侧偏
+              dribbleDirection = Angle::normalize(dribbleDirection + side);
+            }
+            GoToBallAndDribble({.targetDirection = dribbleDirection});
             break;
+          }
           case SkillRequest::clear:
             if(theSkillRequest.mdfzRule)
             {
