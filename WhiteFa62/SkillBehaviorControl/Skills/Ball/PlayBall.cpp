@@ -51,8 +51,8 @@ option((WhiteFleetSkillBehaviorControl) PlayBall,
         {
           x = d;
           y = o.center.angle();
-          if(x < Math::sqr(duelMinDistanceToClosest))          // 改：sqr -> Math::sqr
-            z = std::min<Angle>(Angle(std::abs(y)), z);        // 改：显式模板参数
+          if(x < sqr(duelMinDistanceToClosest))                // 改：还原裸名 sqr
+            z = std::min<Angle>(Angle(std::abs(y)), z);
         }
       }
       return {std::sqrt(x), y, z};
@@ -62,7 +62,7 @@ option((WhiteFleetSkillBehaviorControl) PlayBall,
       (duelMinDistanceToClosest * (1.f - (std::abs(angleToClosestObstacle) / duelMinAngleToClosest / 3.f)));
     const bool obstacleAngleClose = smallestAngleToCloseObstacle <= duelMinAngleToClosest;
     const bool ballSeen = theFieldBall.ballWasSeen(300);
-    const bool ballPosXClose = Math::between<float>(theFieldBall.positionRelative.x(), 0.f, 2000.f); // 改：Math::between
+    const bool ballPosXClose = between<float>(theFieldBall.positionRelative.x(), 0.f, 2000.f); // 改：还原裸名 between
     const bool ballPosYClose = std::abs(theFieldBall.positionRelative.y()) < 500.f;
     const bool rotationToBallOk = std::abs(theFieldBall.positionRelative.angle()) < 80_deg;
 
@@ -86,7 +86,7 @@ option((WhiteFleetSkillBehaviorControl) PlayBall,
       const float angleToObstacle = std::abs(omo.center.angle());
 
       if(distanceToObstacle < (duelMinDistanceToClosest * 1.2f *
-            (1.f - (std::abs(angleToObstacle) / Math::pi / 2.f))))   // 改：pi -> Math::pi
+            (1.f - (std::abs(angleToObstacle) / pi / 2.f))))      // 改：还原裸名 pi
         return false;
     }
     return true;
@@ -151,7 +151,7 @@ option((WhiteFleetSkillBehaviorControl) PlayBall,
       if(theGameState.isKickOff())
         goto kickOff;
       else if(!theGameState.isFreeKick() &&
-              (theFieldBall.positionOnField - usedGoalPost).squaredNorm() < Math::sqr(goalPostHandlingAreaRadius))
+              (theFieldBall.positionOnField - usedGoalPost).squaredNorm() < sqr(goalPostHandlingAreaRadius)) // 改：还原裸名 sqr
         goto atOwnGoalPost;
       {
         Angle d = 0_deg;
@@ -241,7 +241,7 @@ option((WhiteFleetSkillBehaviorControl) PlayBall,
     transition
     {
       if((theFieldBall.positionOnField - usedGoalPost).squaredNorm() >
-         Math::sqr(goalPostHandlingAreaRadius * goalPostHandlingAreaHysteresisMultiplier))
+         sqr(goalPostHandlingAreaRadius * goalPostHandlingAreaHysteresisMultiplier)) // 改：还原裸名 sqr
       {
         if(activateDuel())
           goto zweikampf;
@@ -259,7 +259,7 @@ option((WhiteFleetSkillBehaviorControl) PlayBall,
     transition
     {
       if((theFieldBall.positionOnField - usedGoalPost).squaredNorm() <
-         Math::sqr(goalPostHandlingAreaRadius))
+         sqr(goalPostHandlingAreaRadius)) // 改：还原裸名 sqr
         goto atOwnGoalPost;
       {
         Angle d = 0_deg;
