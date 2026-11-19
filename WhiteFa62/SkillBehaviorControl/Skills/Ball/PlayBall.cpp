@@ -12,9 +12,8 @@
 #include "WhiteFleetMatchTacticalRepair.h"
 #include "WhiteFleetAutonomousKickoff.h"
 
-// ---- 补：以下头文件按工程实际路径确认 ----
-#include "WhiteFleetK1V21MatchProfile.h"   // guardedPhysicalReceiver()
-#include "Settings.h"                      // Settings::lowestValidPlayerNumber 等
+// ---- 补：guardedPhysicalReceiver() 所需头文件（按工程实际路径确认）----
+#include "WhiteFleetK1V21MatchProfile.h"
 
 // 平台检查：不再包含 <cstdlib>（系统头文件，禁止）
 #include <cstdio>
