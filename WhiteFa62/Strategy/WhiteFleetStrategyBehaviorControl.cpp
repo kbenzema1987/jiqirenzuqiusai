@@ -1913,4 +1913,4 @@ void WhiteFleetStrategyBehaviorControl::updateAgentByTeamMessage(Agent& agent, c
   agent.role = teamMessage.theStrategyStatus.role;
 }
 
-void WhiteFleetStrategyBehaviorControl::updateCurrentPosition(Agent
+void WhiteFleetStrategyBehaviorControl::updateCurrentPosition(Agent)
